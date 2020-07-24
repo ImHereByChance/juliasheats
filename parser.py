@@ -15,5 +15,12 @@ def get_column(book, sheet, cells):
 	return [i.value for i in page[cells]]
 
 
-def get_flowerVariety(raw_data:list):
-	return [i for i in raw_data if isinstance(i, str) and i[0].isdigit()]
+def get_flowerVariety(book):
+	sheets = book.get_sheet_names()[1:]  #list of sheets without title-page
+	result = []
+	for sh in sheets:
+		raw_data = get_column(book, sh, 'C')
+		result += [i for i in raw_data 
+							if isinstance(i, str) and i[0].isdigit()]
+	return result
+
