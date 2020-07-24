@@ -4,6 +4,7 @@ import pdftables_api
 apiKey_pdftables = 'ouyf4csccg1l'
 convertor = pdftables_api.Client(apiKey_pdftables)
 
+
 def make_same_fileName(file_name):
 	splited_path = file_name.split('/')
 	primar_name = splited_path[-1]
@@ -12,6 +13,6 @@ def make_same_fileName(file_name):
 		raise ValueError("ValueError: file extension must be pdf")
 	return splited_primar[0] + '.xlsx'
 
-
 def convert_pdf_to_xlsl(pdf_path, xlsx_path):
 	convertor.xlsx(pdf_path, xlsx_path + make_same_fileName(pdf_path))
+
