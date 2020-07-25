@@ -27,7 +27,7 @@ def find_main_data(book, sheet:str):
 			# print('end of range sirching wiht result:', data_range)
 			break
 	if data_beginning_row is None:
-		print('no main data finded')
+		print(f'no main data finded on {sheet}')
 		return
 
 	print('len =', data_range, 'range =', f'A{data_beginning_row}:A{data_beginning_row+data_range-1}')
