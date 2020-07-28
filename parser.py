@@ -11,7 +11,6 @@ def find_additional_data(book, sheet:str):
 
 def find_main_data(book, sheet:str):
 	page = book.get_sheet_by_name(sheet)
-	
 	data_beginning_row = None
 	data_range = 0
 	for cell in page['A']:
@@ -31,7 +30,6 @@ def find_main_data(book, sheet:str):
 	if data_beginning_row is None:
 		print(f'no main data finded on `{sheet}`')
 		return
-
 	# print(book, 'len =', data_range, f'range = A{data_beginning_row}:A{data_beginning_row+data_range-1}', sep=',')
 	return data_beginning_row, data_beginning_row + data_range - 1
 
@@ -39,6 +37,12 @@ def find_main_data(book, sheet:str):
 def get_column(book, sheet:str, cells):
 	page = book.get_sheet_by_name(sheet)
 	return [i.value for i in page[cells]]
+
+
+def get_range_from_column(book, sheet, range:tuple, column_name:str):
+		page = book.get_sheet_by_name(sheet)
+		return [i[0].value for i in 
+					page[f'{column_name}{range[0]}':f'{column_name}{range[1]}']]
 
 
 def get_variety_and_customer(book):
@@ -62,7 +66,8 @@ if __name__ == '__main__':
 	wb = load_workbook(file)
 	sheet = 'Page 2'
 
-	a = find_main_data(wb, sheet)
+	# a = find_main_data(wb, sheet)
+	b = get_range_from_column(wb, sheet, find_main_data(wb, sheet), 'F')
 
-	print(a)
+	print(b)
 
