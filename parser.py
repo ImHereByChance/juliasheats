@@ -8,18 +8,20 @@ def pull_up_files(file_list:list):
 def find_additional_data(book, sheet:str):
 	pass
 
+
 def find_main_data(book, sheet:str):
 	page = book.get_sheet_by_name(sheet)
-	column = page['A']
-	column_end = len(column) - 1
 	
 	data_beginning_row = None
 	data_range = 0
-	for cell in column:
-		if cell.value is not None and cell.value == 'date':
-			data_beginning_row = cell.row + 1
-			# print('begin:', data_beginning_row) 
-			continue
+	for cell in page['A']:
+		if cell.value == 'date':
+			data_beginning_row = cell.row + 1 
+			if isinstance(page[f'A{data_beginning_row}'].value, float):  # check of row follows next to data_beginng row 
+				# print('begin:', data_beginning_row)
+				continue
+			else:
+				raise Error("Error: 'date'-row is found but no float-type date-cells follows further")
 		if data_beginning_row is not None and type(cell.value) == float:
 			data_range += 1
 			# print('value:', cell.value, cell.row, 'count:', data_range)
@@ -27,11 +29,12 @@ def find_main_data(book, sheet:str):
 			# print('end of range sirching wiht result:', data_range)
 			break
 	if data_beginning_row is None:
-		print(f'no main data finded on {sheet}')
+		print(f'no main data finded on `{sheet}`')
 		return
 
-	print('len =', data_range, 'range =', f'A{data_beginning_row}:A{data_beginning_row+data_range-1}')
-	return data_range, (f'A{data_beginning_row}',f'A{data_beginning_row+data_range-1}')
+	# print(book, 'len =', data_range, f'range = A{data_beginning_row}:A{data_beginning_row+data_range-1}', sep=',')
+	return data_beginning_row, data_beginning_row + data_range - 1
+
 
 def get_column(book, sheet:str, cells):
 	page = book.get_sheet_by_name(sheet)
@@ -59,5 +62,7 @@ if __name__ == '__main__':
 	wb = load_workbook(file)
 	sheet = 'Page 2'
 
-	find_main_data(wb, sheet)
+	a = find_main_data(wb, sheet)
+
+	print(a)
 
