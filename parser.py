@@ -20,7 +20,7 @@ def find_main_data(book, sheet:str):
 				# print('begin:', data_beginning_row)
 				continue
 			else:
-				raise Error("Error: 'date'-row is found but no float-type date-cells follows further")
+				raise Error("Error: 'date'-row is found but float-type date-cell don't follow further")
 		if data_beginning_row is not None and type(cell.value) == float:
 			data_range += 1
 			# print('value:', cell.value, cell.row, 'count:', data_range)
@@ -39,26 +39,41 @@ def get_column(book, sheet:str, cells):
 	return [i.value for i in page[cells]]
 
 
-def get_range_from_column(book, sheet, range:tuple, column_name:str):
+def get_range_from_column(book, sheet, col_range:tuple, column_name:str):
 		page = book.get_sheet_by_name(sheet)
 		return [i[0].value for i in 
-					page[f'{column_name}{range[0]}':f'{column_name}{range[1]}']]
+					page[f'{column_name}{col_range[0]}':f'{column_name}{col_range[1]}']]
 
 
-def get_variety_and_customer(book):
+def is_varieties_or_costumers(data_list):
+	for i in data_list:
+		if isinstance(i, str) and i[0].isdigit() and ' ' in i:
+			continue
+		else:
+			return False
+	return True
+
+
+def pars(book):
 	sheets = book.get_sheet_names()[1:]  #list of sheets without title-page
-	variety = []
-	costumer = []
+	varieties = []
+	costumers = []
+	
 	for sh in sheets:
-		raw_variety = get_column(book, sh, 'C')
-		variety += [i for i in raw_variety 
-							if isinstance(i, str) and i[0].isdigit()]
-		raw_costumer = get_column(book, sh, 'F')
-		costumer += [i for i in raw_costumer if isinstance(i, str) 
-										and i[0].isdigit() and ' ' in i]
-	if len(variety) != len(costumer):
-		raise Error('Error: len(variety) != len(costumer)')
-	return variety, costumer
+		mainData_range = find_main_data(book, sh)
+		if mainData_range is not None:
+
+				variety = get_range_from_column(book, sh, mainData_range, 'C')
+				if not is_varieties_or_costumers(variety):
+					raise ValueError(f"Error in column 'variety' in {book} on page '{sheet}'")
+				varieties += variety
+				
+				costumer = get_range_from_column(book, sh, mainData_range, 'F')
+				if not is_varieties_or_costumers(costumer):
+					raise ValueError(f"Error in column 'costumer' in {book} on page '{sheet}'")
+				costumers += costumer
+
+	return varieties, costumers
 
 
 if __name__ == '__main__':
@@ -66,8 +81,5 @@ if __name__ == '__main__':
 	wb = load_workbook(file)
 	sheet = 'Page 2'
 
-	# a = find_main_data(wb, sheet)
-	b = get_range_from_column(wb, sheet, find_main_data(wb, sheet), 'F')
 
-	print(b)
 
