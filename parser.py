@@ -20,7 +20,7 @@ def find_main_data(book, sheet:str):
 				# print('begin:', data_beginning_row)
 				continue
 			else:
-				raise Error("Error: 'date'-row is found but float-type date-cell don't follow further")
+				raise ValueError("Error: 'date'-row is found but float-type date-cell don't follow further")
 		if data_beginning_row is not None and type(cell.value) == float:
 			data_range += 1
 			# print('value:', cell.value, cell.row, 'count:', data_range)
@@ -28,24 +28,55 @@ def find_main_data(book, sheet:str):
 			# print('end of range sirching wiht result:', data_range)
 			break
 	if data_beginning_row is None:
-		print(f'no main data finded on `{sheet}`')
+		print(f'no main data finded on "{sheet}"')
 		return
 	# print(book, 'len =', data_range, f'range = A{data_beginning_row}:A{data_beginning_row+data_range-1}', sep=',')
 	return data_beginning_row, data_beginning_row + data_range - 1
 
+
+def find_quantity_columns(book, sheet:str):
+		page = book.get_sheet_by_name(sheet) #tmp
+		mainData_range = find_main_data(book, sheet)  
+		data_beginning_row = str(mainData_range[0])
+		beginning = None
+		end = None
+		for cell in page[data_beginning_row]:
+			# print('---ITER---:', cell.value)
+			# print('BEGIN:', beginning)
+			# print('END:', end)
+			if not isinstance(cell.value, int):
+				# print(cell.value, 'is not int')
+				if beginning is not None:
+					# print(f'for {cell.value} beginning {beginning} is not None')
+					if not isinstance(cell.value, str):
+						# print(cell.value, 'is not float, beginning is set to None')
+						beginning = None
+						continue	
+					elif ',' in cell.value:  #TODO: REG digit-digit-comma-digit-digit
+						# print(f'for {cell.value} else, {cell.row} is end')
+						end = cell.column
+						break
+				continue
+			elif beginning is None:
+				# print(f'elif: {cell.value} is beginning with N {cell.column}')
+				beginning = cell.column
+		if not end - beginning == 4:
+			raise ValueError("Error during defining range of columns containing quantity values")
+		return (beginning, end)
+			
 
 def get_column(book, sheet:str, cells):
 	page = book.get_sheet_by_name(sheet)
 	return [i.value for i in page[cells]]
 
 
-def get_range_from_column(book, sheet, col_range:tuple, column_name:str):
+def get_range_from_column(book, sheet:str, col_range:tuple, column_name:str):
 		page = book.get_sheet_by_name(sheet)
 		return [i[0].value for i in 
 					page[f'{column_name}{col_range[0]}':f'{column_name}{col_range[1]}']]
 
 
-def is_varieties_or_costumers(data_list):
+def is_varieties_or_costumers(data_list:list):
 	for i in data_list:
 		if isinstance(i, str) and i[0].isdigit() and ' ' in i:
 			continue
@@ -81,5 +112,6 @@ if __name__ == '__main__':
 	wb = load_workbook(file)
 	sheet = 'Page 2'
 
+	print(find_quantity_columns(wb, sheet))
 
 
