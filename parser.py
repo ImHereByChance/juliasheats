@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
-
+import re
 
 
 def pull_up_files(file_list:list):
@@ -66,20 +66,38 @@ def find_quantity_columns(book, sheet:str, mainData_range):
 		return tuple(get_column_letter(i) for i in range(beginning, end+1))
 
 
-
+def is_longFormat_date(date:str):
+	result = re.match(r'\d{2}.\d{2}.\d{4}', date)
+	return not isinstance(result, type(None))
 
 
 def find_singleUse_data(book, sheet:str):
 	page = book.get_sheet_by_name(sheet)
 	data_beginning_row = None
 	data_range = 0
+	c = 0
 	for cell in page['A']:
-		if cell.value == 'Single use packaging' and page[f'A{cell.row+1}'].value == 'Date':  #checkins next cell.value after 'Single use packing'
-			data_beginning_row = cell.value + 2
+		# c+=1
+		# print(f'{c})' ,cell.value)
+		if cell.value == 'Single use packaging': 
+			if not page[f'A{cell.row+1}'].value == 'Date':  
+				raise ValueError('error during searching singleUse_range: \
+								 "Date" row don`t follow after "Single use packaging" row')
+			data_beginning_row = cell.row + 2
 			continue
-		raise ValueError('ValueError during searching singleUse_range: "Date" row don`t follow after "Single use packaging" row')
+		if data_beginning_row is not None:
+			# print(f'{c})' ,cell.value, '2if')
+			if is_longFormat_date(cell.value):
+				data_range += 1
+				continue
+			elif cell.value == 'Total':
+				break
+	if data_beginning_row is None:
+		print(f'no "Single use packaging" data finded on "{sheet}"')
+		return
+	print('OUT:', (data_beginning_row, data_beginning_row + data_range - 1))
+	data_beginning_row, data_beginning_row + data_range - 1
 
-		
 
 def get_column(book, sheet:str, cells):
 	page = book.get_sheet_by_name(sheet)
@@ -113,7 +131,6 @@ def correct_priece_format(price:str, book, sheet:str):
 	else:
 		raise ValueError(f'ValueError: while convert to right format value {price}\
 							from column Prise in book {book}, page {sheet}')
-
 
 
 def parse(book):
@@ -166,9 +183,6 @@ if __name__ == '__main__':
 	sheet = wb.get_sheet_by_name('Page 2')
 
 	find_singleUse_data(wb, 'Page 2')
-for c in sheet['A']:
-	print(c.value)
-
 
 
 
