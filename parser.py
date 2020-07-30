@@ -113,7 +113,6 @@ def check_codes(codes:list, book, sheet):
 				raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
 	return True
 
-
 	
 def get_column(book, sheet:str, cells):
 	page = book.get_sheet_by_name(sheet)
@@ -154,7 +153,7 @@ def parse(book):
 	varieties = []; costumers = []; numbers = []; pieces = []
 	totals = []   ; prices = []   ;amounts = [] ; codes = []
 
-	codes_singleUse = []
+	codes_singleUse = []; numbers_singleUse = []; rates_singleUse = []
 	
 	for sh in sheets:
 		mainData_range = find_main_data(book, sh)
@@ -168,7 +167,7 @@ def parse(book):
 			costumer = get_range_from_column(book, sh, mainData_range, 'F')
 			if not is_varieties_or_costumers(costumer):
 				raise ValueError(f"Error in column 'costumer' in {book} on page '{sheet}'")				
-				costumers += costumer
+			costumers += costumer
 
 			quantity_colums = find_quantity_columns(book, sh, mainData_range)
 
@@ -200,25 +199,43 @@ def parse(book):
 			check_codes(code_singleUse, book, sh)
 			codes_singleUse += code_singleUse
 
+			quantities_singleUse = find_quantities_singleUse(book, sh, singleUse_range)
+
+			number_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[0])
+			if len(number_singleUse) == 1 and is_rows_merged(number_singleUse):
+				number_singleUse = [i for i in number_singleUse[0].split('\n')]
+			# TODO: check-func
+			numbers_singleUse += number_singleUse
+
+			rate_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[1])
+			if len(rate_singleUse) == 1 and is_rows_merged(rate_singleUse):
+				rate_singleUse = [i for i in rate_singleUse[0].split('\n')]
+			# TODO: check-func
+			rates_singleUse += rate_singleUse
 
 
-
-
-	return varieties, costumers, numbers, pieces, totals, prices, amounts, codes, codes_singleUse
+	return varieties, costumers, numbers, pieces, totals, prices, amounts, codes, codes_singleUse, numbers_singleUse, rates_singleUse
 
 
 if __name__ == '__main__':
-	file = '/home/emil/Загрузки/out/pdfFile.xlsx'
+	file = '/home/emil/Загрузки/out/pdfFile5.xlsx'
 	wb = load_workbook(file)
-	sheet = wb.get_sheet_by_name('Page 4')
+	# sheet = wb.get_sheet_by_name('Page 4')
 
-	sr = find_singleUse_data(wb, 'Page 4')
+	# sr = find_singleUse_data(wb, 'Page 4')
 
-	qc = find_quantities_singleUse(wb, 'Page 4', sr)
-	print(qc)
+	# qc = find_quantities_singleUse(wb, 'Page 4', sr)
+	# print(qc)
 
 	# b = get_range_from_column(wb, 'Page 3', col_range=a, column_name='A')
 	# print(b)
+
+	dt = parse(wb)
+
+	for i in dt:
+		print('-----------')
+		print(i)
+		print('')
 
 	
 
