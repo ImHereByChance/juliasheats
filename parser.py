@@ -64,7 +64,22 @@ def find_quantity_columns(book, sheet:str, mainData_range):
 		if not end - beginning == 5:
 			raise ValueError("Error during defining range of columns containing quantity values")
 		return tuple(get_column_letter(i) for i in range(beginning, end+1))
-			
+
+
+
+
+
+def find_singleUse_data(book, sheet:str):
+	page = book.get_sheet_by_name(sheet)
+	data_beginning_row = None
+	data_range = 0
+	for cell in page['A']:
+		if cell.value == 'Single use packaging' and page[f'A{cell.row+1}'].value == 'Date':  #checkins next cell.value after 'Single use packing'
+			data_beginning_row = cell.value + 2
+			continue
+		raise ValueError('ValueError during searching singleUse_range: "Date" row don`t follow after "Single use packaging" row')
+
+		
 
 def get_column(book, sheet:str, cells):
 	page = book.get_sheet_by_name(sheet)
@@ -103,14 +118,8 @@ def correct_priece_format(price:str, book, sheet:str):
 
 def parse(book):
 	sheets = book.get_sheet_names()[1:]  #list of sheets without title-page
-	varieties = []
-	costumers = []
-	numbers = []
-	pieces = []
-	totals = []
-	prices = []
-	amounts = []
-	codes = []
+	varieties = []; costumers = []; numbers = []; pieces = []
+	totals = []   ; prices = []   ;amounts = [] ; codes = []
 	
 	for sh in sheets:
 		mainData_range = find_main_data(book, sh)
@@ -152,9 +161,14 @@ def parse(book):
 
 
 if __name__ == '__main__':
-	file = '/home/emil/Загрузки/out/pdfFile.xlsx'
+	file = '/home/emil/Загрузки/out/pdfFile53.xlsx'
 	wb = load_workbook(file)
-	sheet = wb.get_sheet_by_name('Page 3')
+	sheet = wb.get_sheet_by_name('Page 2')
+
+	find_singleUse_data(wb, 'Page 2')
+for c in sheet['A']:
+	print(c.value)
+
 
 
 
