@@ -1,6 +1,13 @@
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
+from collections import namedtuple
 import re
+
+
+Fieldstuple = namedtuple('Fields', 'varieties costumers numbers pieces \
+								   	totals    prices    amounts codes  \
+								    								   \
+								    codes_singleUse numbers_singleUse rates_singleUse')
 
 
 def pull_up_files(file_list:list):
@@ -122,12 +129,16 @@ def check_numbers(numbers:list, book, sheet):
 
 
 def check_rate(rates:list, book, sheet):
-	pass
 	for rate in rates:
 		rate = str(rate)
 		res = re.match(r'\d{1},\d{2}', rate)
 		if isinstance(res, type(None)):
 			raise ValueError(f'Error during checking Rate value "{rate}" in {book} on {sheet}')
+
+
+def correct_rate_format(rate_value):
+	result = re.sub(',', '.', rate_value)
+	return float(result)
 
 	
 def get_column(book, sheet:str, cells):
@@ -156,9 +167,9 @@ def correct_priece_format(price:str, book, sheet:str):
 							      from column Prise in book {book}, page {sheet}')
 	price = str(price)
 	if len(price) == 3:
-		return f'0,{price}'
+		return float(f'0.{price}')
 	elif len(price) > 3:
-		return f'{price[:-3]},{price[-3:]}'
+		return float(f'{price[:-3]}{price[-3:]}')
 	else:
 		raise ValueError(f'ValueError: while convert to right format value {price}\
 							      from column Prise in book {book}, page {sheet}')
@@ -167,7 +178,7 @@ def correct_priece_format(price:str, book, sheet:str):
 def parse(book):
 	sheets = book.get_sheet_names()[1:]  #list of sheets without title-page
 	varieties = []; costumers = []; numbers = []; pieces = []
-	totals = []   ; prices = []   ;amounts = [] ; codes = []
+	totals = []   ; prices = []   ; amounts = []; codes = []
 
 	codes_singleUse = []; numbers_singleUse = []; rates_singleUse = []
 	
@@ -230,10 +241,14 @@ def parse(book):
 			if len(rate_singleUse) == 1 and is_rows_merged(rate_singleUse):
 				rate_singleUse = [i for i in rate_singleUse[0].split('\n')]
 			check_rate(rate_singleUse, book, sh)
+			rate_singleUse = [correct_rate_format(i) for i in rate_singleUse]
 			rates_singleUse += rate_singleUse
 
+	retrieved_data = Fieldstuple(varieties, costumers, numbers, pieces, 
+								 totals,    prices,    amounts, codes, 
+								 codes_singleUse, numbers_singleUse, rates_singleUse)
 
-	return varieties, costumers, numbers, pieces, totals, prices, amounts, codes, codes_singleUse, numbers_singleUse, rates_singleUse
+	return retrieved_data
 
 
 if __name__ == '__main__':
@@ -242,10 +257,13 @@ if __name__ == '__main__':
 	
 	dt = parse(wb)
 
-	for i in dt:
-		print('-----------')
-		print(i)
-		print('')
+	cost = dt.costumers
+	print(cost)
+
+	# for i in dt:
+	# 	print('-----------')
+	# 	print(i)
+	# 	print('')
 
 	
 
