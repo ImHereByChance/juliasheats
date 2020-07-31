@@ -111,7 +111,23 @@ def check_codes(codes:list, book, sheet):
 		for i in string:
 			if not i.isdigit():
 				raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
-	return True
+
+
+def check_numbers(numbers:list, book, sheet):
+	for numb in numbers:
+		numb = str(numb)
+		for i in numb:
+			if not i.isdigit():
+				raise ValueError(f'Error during checking Number value in {book} on {sheet}')
+
+
+def check_rate(rates:list, book, sheet):
+	for rate in rates:
+		rate = str(rate)
+		for i in rate:
+			res = re.match(r'\d{2}.\d{2}', i)
+			if not isinstance(res, type(None)):
+				raise ValueError(f'Error during checking Rate value in {book} on {sheet}')
 
 	
 def get_column(book, sheet:str, cells):
@@ -172,12 +188,15 @@ def parse(book):
 			quantity_colums = find_quantity_columns(book, sh, mainData_range)
 
 			number = get_range_from_column(book, sh, mainData_range, quantity_colums[0])
+			check_numbers(number, book, sh)
 			numbers += number
 
 			piece = get_range_from_column(book, sh, mainData_range, quantity_colums[1])
+			check_numbers(piece, book, sh)
 			pieces += piece
 
 			total = get_range_from_column(book, sh, mainData_range, quantity_colums[2])
+			check_numbers(total, book, sh)
 			totals += total
 
 			price = get_range_from_column(book, sh, mainData_range, quantity_colums[3])
@@ -195,7 +214,7 @@ def parse(book):
 
 			code_singleUse = get_range_from_column(book, sh, singleUse_range, 'B')
 			if len(code_singleUse) == 1 and is_rows_merged(code_singleUse):
-				code_singleUse = [i for i in code_singleUse[0].split('\n')]
+				code_singleUse = [int(i) for i in code_singleUse[0].split('\n')]
 			check_codes(code_singleUse, book, sh)
 			codes_singleUse += code_singleUse
 
@@ -203,14 +222,14 @@ def parse(book):
 
 			number_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[0])
 			if len(number_singleUse) == 1 and is_rows_merged(number_singleUse):
-				number_singleUse = [i for i in number_singleUse[0].split('\n')]
-			# TODO: check-func
+				number_singleUse = [int(i) for i in number_singleUse[0].split('\n')]
+			check_numbers(number_singleUse, book, sh)
 			numbers_singleUse += number_singleUse
 
 			rate_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[1])
 			if len(rate_singleUse) == 1 and is_rows_merged(rate_singleUse):
 				rate_singleUse = [i for i in rate_singleUse[0].split('\n')]
-			# TODO: check-func
+			check_rate(rate_singleUse, book, sh)
 			rates_singleUse += rate_singleUse
 
 
@@ -220,16 +239,7 @@ def parse(book):
 if __name__ == '__main__':
 	file = '/home/emil/Загрузки/out/pdfFile5.xlsx'
 	wb = load_workbook(file)
-	# sheet = wb.get_sheet_by_name('Page 4')
-
-	# sr = find_singleUse_data(wb, 'Page 4')
-
-	# qc = find_quantities_singleUse(wb, 'Page 4', sr)
-	# print(qc)
-
-	# b = get_range_from_column(wb, 'Page 3', col_range=a, column_name='A')
-	# print(b)
-
+	
 	dt = parse(wb)
 
 	for i in dt:
