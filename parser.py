@@ -122,12 +122,12 @@ def check_numbers(numbers:list, book, sheet):
 
 
 def check_rate(rates:list, book, sheet):
+	pass
 	for rate in rates:
 		rate = str(rate)
-		for i in rate:
-			res = re.match(r'\d{2}.\d{2}', i)
-			if not isinstance(res, type(None)):
-				raise ValueError(f'Error during checking Rate value in {book} on {sheet}')
+		res = re.match(r'\d{1},\d{2}', rate)
+		if isinstance(res, type(None)):
+			raise ValueError(f'Error during checking Rate value "{rate}" in {book} on {sheet}')
 
 	
 def get_column(book, sheet:str, cells):
