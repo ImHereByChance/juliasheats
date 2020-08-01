@@ -129,16 +129,12 @@ def check_numbers(numbers:list, book, sheet):
 
 
 def check_rate(rates:list, book, sheet):
+	"""cheks is format of string like 'dd.mm.yyyy' or not"""
 	for rate in rates:
 		rate = str(rate)
 		res = re.match(r'\d{1},\d{2}', rate)
 		if isinstance(res, type(None)):
 			raise ValueError(f'Error during checking Rate value "{rate}" in {book} on {sheet}')
-
-
-def correct_rate_format(rate_value):
-	result = re.sub(',', '.', rate_value)
-	return float(result)
 
 	
 def get_column(book, sheet:str, cells):
@@ -147,6 +143,9 @@ def get_column(book, sheet:str, cells):
 
 
 def get_range_from_column(book, sheet:str, col_range:tuple, column_name:str):
+		"""takes tuple containing (bigining-, end-) column numbers 
+		from find-functions and returns values of cells in this range
+		"""
 		page = book.get_sheet_by_name(sheet)
 		return [i[0].value for i in 
 					page[f'{column_name}{col_range[0]}':f'{column_name}{col_range[1]}']]
@@ -169,10 +168,17 @@ def correct_priece_format(price:str, book, sheet:str):
 	if len(price) == 3:
 		return float(f'0.{price}')
 	elif len(price) > 3:
-		return float(f'{price[:-3]}{price[-3:]}')
+		return float(f'{price[:-3]}.{price[-3:]}')
 	else:
 		raise ValueError(f'ValueError: while convert to right format value {price}\
 							      from column Prise in book {book}, page {sheet}')
+
+
+def adopt_float_format(rate_value):
+	"""make rate record suitable to convert to float 
+	and convert them via float(rate)"""
+	result = re.sub(',', '.', rate_value)
+	return float(result)
 
 
 def parse(book):
@@ -215,6 +221,7 @@ def parse(book):
 			prices += price
 
 			amount = get_range_from_column(book, sh, mainData_range, quantity_colums[4])
+			amount = [adopt_float_format(i) for i in amount]
 			amounts += amount
 
 			code = get_range_from_column(book, sh, mainData_range, quantity_colums[5])
@@ -241,7 +248,7 @@ def parse(book):
 			if len(rate_singleUse) == 1 and is_rows_merged(rate_singleUse):
 				rate_singleUse = [i for i in rate_singleUse[0].split('\n')]
 			check_rate(rate_singleUse, book, sh)
-			rate_singleUse = [correct_rate_format(i) for i in rate_singleUse]
+			rate_singleUse = [adopt_float_format(i) for i in rate_singleUse]
 			rates_singleUse += rate_singleUse
 
 	retrieved_data = Fieldstuple(varieties, costumers, numbers, pieces, 
@@ -257,13 +264,9 @@ if __name__ == '__main__':
 	
 	dt = parse(wb)
 
-	cost = dt.costumers
-	print(cost)
+	print(dt.prices)
+	print(dt.amounts)
 
-	# for i in dt:
-	# 	print('-----------')
-	# 	print(i)
-	# 	print('')
 
 	
 
