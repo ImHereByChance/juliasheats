@@ -1,3 +1,4 @@
+import openpyxl 
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
 from collections import namedtuple
@@ -8,10 +9,6 @@ Fieldstuple = namedtuple('Fields', 'varieties costumers numbers pieces \
 								   	totals    prices    amounts codes  \
 								    								   \
 								    codes_singleUse numbers_singleUse rates_singleUse')
-
-
-def pull_up_files(file_list:list):
-	return [load_workbook(f) for f in file_list]
 
 
 def find_main_data(book, sheet:str):
@@ -38,39 +35,27 @@ def find_main_data(book, sheet:str):
 def find_quantity_columns(book, sheet:str, mainData_range):
 		page = book.get_sheet_by_name(sheet)  
 		data_beginning_row = str(mainData_range[0])
+		
 		beginning = None
 		end = None
 		for cell in page[data_beginning_row]:
-			## print('---ITER---:', cell.value)
-			## print('BEGIN:', beginning)
-			## print('END:', end)
 			if not isinstance(cell.value, int):
-				## print(cell.value, 'is not int')
 				if beginning is not None:
-					## print(f'for {cell.value} beginning {beginning} is not None')
 					if not isinstance(cell.value, str):
-						## print(cell.value, 'is not float, beginning is set to None')
 						beginning = None
 						continue	
 					elif ',' in cell.value:  #TODO: REG digit-digit-comma-digit-digit
-						## print(f'for {cell.value} else, {cell.row} is end')
 						end = cell.column + 1  # +1 is for include 'code' column, that follows quite after amount ( ',' cell.value)
 						break
 				continue
 			elif beginning is None:
-				## print(f'elif: {cell.value} is beginning with N {cell.column}')
 				beginning = cell.column
 		if not end - beginning == 5:
 			raise ValueError("Error during defining range of columns containing quantity values")
 		return tuple(get_column_letter(i) for i in range(beginning, end+1))
 
 
-def is_longFormat_date(date:str):
-	result = re.match(r'\d{2}.\d{2}.\d{4}', date)
-	return not isinstance(result, type(None))
-
-
-def find_singleUse_data(book, sheet:str):
+def find_singleUse_setion(book, sheet:str):
 	page = book.get_sheet_by_name(sheet)
 	data_beginning_row = None
 	data_range = 0
@@ -89,7 +74,7 @@ def find_singleUse_data(book, sheet:str):
 			elif cell.value == 'Total':
 				break
 	if data_beginning_row is None:
-		print(f'no "Single use packaging" data finded on "{sheet}"')
+		print(f'no "Single use packaging" section finded on "{sheet}" in {book}')
 		return
 	return data_beginning_row, data_beginning_row + data_range - 1
 
@@ -101,45 +86,6 @@ def find_quantities_singleUse(book, sheet:str, singleUse_range):
 	quantity_columns = [cell.column for cell in page[headline_row] 
 								            if cell.value in ('Number', 'Rate')]
 	return tuple(get_column_letter(i) for i in quantity_columns)
-
-
-def is_rows_merged(rowData:list):
-	cell = rowData[0]
-	if '\n' in cell:
-		return True
-	return False 
-
-
-def check_codes(codes:list, book, sheet):
-	for string in codes:
-		string = str(string)
-		if not len(string) == 3:
-			raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
-		for i in string:
-			if not i.isdigit():
-				raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
-
-
-def check_numbers(numbers:list, book, sheet):
-	for numb in numbers:
-		numb = str(numb)
-		for i in numb:
-			if not i.isdigit():
-				raise ValueError(f'Error during checking Number value in {book} on {sheet}')
-
-
-def check_rate(rates:list, book, sheet):
-	"""cheks is format of string like 'dd.mm.yyyy' or not"""
-	for rate in rates:
-		rate = str(rate)
-		res = re.match(r'\d{1},\d{2}', rate)
-		if isinstance(res, type(None)):
-			raise ValueError(f'Error during checking Rate value "{rate}" in {book} on {sheet}')
-
-	
-def get_column(book, sheet:str, cells):
-	page = book.get_sheet_by_name(sheet)
-	return [i.value for i in page[cells]]
 
 
 def get_range_from_column(book, sheet:str, col_range:tuple, column_name:str):
@@ -160,9 +106,50 @@ def is_varieties_or_costumers(data_list:list):
 	return True
 
 
+def is_longFormat_date(date:str):
+	result = re.match(r'\d{2}.\d{2}.\d{4}', date)
+	return not isinstance(result, type(None))
+
+
+def is_rows_merged(rowData:list):
+	cell = str(rowData[0])
+	if '\n' in cell:
+		return True
+	return False 
+
+
+def check_codes(codes:list, book, sheet):
+	for string in codes:
+		string = str(string)
+		if not len(string) == 3:
+			raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
+		for i in string:
+			if not i.isdigit():
+				raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
+
+
+def check_numbers(numbers:list, book, sheet, column_name):
+	row_numb=0
+	for numb in numbers:
+		row_numb+=1
+		numb = str(numb)
+		for i in numb:
+			if not i.isdigit() and i != '.':
+				raise ValueError(f'Error during checking Number "{numb}" value (row {row_numb}) in {book} on {sheet}')
+	
+
+def check_rate(rates:list, book, sheet):
+	"""cheks is format of string like 'dd.mm.yyyy' or not"""
+	for rate in rates:
+		rate = str(rate)
+		res = re.match(r'\d{1},\d{2}', rate)
+		if isinstance(res, type(None)):
+			raise ValueError(f'Error during checking Rate value "{rate}" in {book} on {sheet}')
+
+
 def correct_priece_format(price:str, book, sheet:str):
 	if not isinstance(price, int):
-		raise ValueError(f'ValueError: while convert to right format value {price}\
+		raise ValueError(f'ValueError while convert to right format value {price}\
 							      from column Prise in book {book}, page {sheet}')
 	price = str(price)
 	if len(price) == 3:
@@ -181,8 +168,10 @@ def adopt_float_format(rate_value):
 	return float(result)
 
 
-def parse(book):
+def parse(file):
+	book = load_workbook(file)
 	sheets = book.get_sheet_names()[1:]  #list of sheets without title-page
+	
 	varieties = []; costumers = []; numbers = []; pieces = []
 	totals = []   ; prices = []   ; amounts = []; codes = []
 
@@ -205,15 +194,15 @@ def parse(book):
 			quantity_colums = find_quantity_columns(book, sh, mainData_range)
 
 			number = get_range_from_column(book, sh, mainData_range, quantity_colums[0])
-			check_numbers(number, book, sh)
+			check_numbers(number, book, sh, 'number')
 			numbers += number
 
 			piece = get_range_from_column(book, sh, mainData_range, quantity_colums[1])
-			check_numbers(piece, book, sh)
+			check_numbers(piece, book, sh, 'piece')
 			pieces += piece
 
 			total = get_range_from_column(book, sh, mainData_range, quantity_colums[2])
-			check_numbers(total, book, sh)
+			check_numbers(total, book, sh, 'total')
 			totals += total
 
 			price = get_range_from_column(book, sh, mainData_range, quantity_colums[3])
@@ -227,7 +216,7 @@ def parse(book):
 			code = get_range_from_column(book, sh, mainData_range, quantity_colums[5])
 			codes += code
 
-		singleUse_range = find_singleUse_data(book, sh)
+		singleUse_range = find_singleUse_setion(book, sh)
 		if singleUse_range is not None:
 
 			code_singleUse = get_range_from_column(book, sh, singleUse_range, 'B')
@@ -241,7 +230,7 @@ def parse(book):
 			number_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[0])
 			if len(number_singleUse) == 1 and is_rows_merged(number_singleUse):
 				number_singleUse = [int(i) for i in number_singleUse[0].split('\n')]
-			check_numbers(number_singleUse, book, sh)
+			check_numbers(number_singleUse, book, sh, 'number_singleUse')
 			numbers_singleUse += number_singleUse
 
 			rate_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[1])
@@ -259,13 +248,12 @@ def parse(book):
 
 
 if __name__ == '__main__':
-	file = '/home/emil/Загрузки/out/pdfFile5.xlsx'
-	wb = load_workbook(file)
-	
-	dt = parse(wb)
+	file = 'pdfFile47.xlsx'
+	dt = parse(file)
+	for i in dt:
+		print(i)
 
-	print(dt.prices)
-	print(dt.amounts)
+
 
 
 	
