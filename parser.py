@@ -59,16 +59,26 @@ def find_quantity_columns(book, sheet:str, mainData_range):
 	return tuple(get_column_letter(i) for i in range(beginning, ending+1))
 
 
-def find_singleUse_section(book, sheet:str):
+def find_additional_section(book, sheet:str, section:str):
+	"""Finds "Single use packaging" and "Multi use packaging" sections on the page. 
+	Returns tuple (beginning, ending) row-numbers.
+	"""
 	page = book.get_sheet_by_name(sheet)
 	data_beginning_row = None
 	data_range = 0
 	c = 0
 	for cell in page['A']:
-		if cell.value == 'Single use packaging': 
+		# print(cell.value, '||||')
+		if cell.value == section: 
 			if not page[f'A{cell.row+1}'].value == 'Date':  
-				raise ValueError('error during searching singleUse_range: \
-								 "Date" row don`t follow after "Single use packaging" row')
+				raise ValueError(f'error during searching {section}range: \
+								 "Date" row don`t follow after "{section}" row')
+			if not is_longFormat_date(page[f'A{cell.row+2}'].value):
+				if is_gap_after_date(page[f'{cell.row+2}']):
+					data_beginning_row = data_beginning_row = cell.row + 3
+					continue
+				else:
+					raise ValueError(f'can`t define {section} on {page}')
 			data_beginning_row = cell.row + 2
 			continue
 		if data_beginning_row is not None:
@@ -78,9 +88,19 @@ def find_singleUse_section(book, sheet:str):
 			elif cell.value == 'Total':
 				break
 	if data_beginning_row is None:
-		print(f'no "Single use packaging" section finded on "{sheet}" in {book}')
+		print(f'no "{section}" section finded on "{sheet}" in {book}')
 		return
 	return data_beginning_row, data_beginning_row + data_range - 1
+
+
+def is_gap_after_date(row):
+	"""checks is row is empty spase after 'Date'-row in additional section
+	(some pages can contain such rows after conversion, seldon) 
+	"""
+	for cell in row:
+		if cell.value == 'rental charge':
+			return True
+	return False
 
 
 def find_quantities_singleUse(book, sheet:str, singleUse_range):
@@ -111,6 +131,8 @@ def is_varieties_or_costumers(data_list:list):
 
 
 def is_longFormat_date(date:str):
+	if not isinstance(date, str):
+		return False
 	result = re.match(r'\d{2}.\d{2}.\d{4}', date)
 	return not isinstance(result, type(None))
 
@@ -165,8 +187,8 @@ def correct_priece_format(price:str, book, sheet:str):
 							      from column Prise in book {book}, page {sheet}')
 
 def correct_totals_format(totals:list):
-	"""corrects 'total' values like 1,600 that retrieved as floats -> 1.6 
-	to correct format -> 1600, int
+	"""finds 'total' values like 1,600 that retrieved as floats (1,600 -> 1.6) 
+	and corrects them to format -> 1600, int
 	"""
 	result = []
 	for i in totals:
@@ -180,8 +202,8 @@ def correct_totals_format(totals:list):
 
 
 def adopt_float_format(rate_value):
-	"""make rate record suitable to convert to float 
-	and convert them via float(rate)"""
+	"""makes rate record suitable to convert to float 
+	and converts them"""
 	result = re.sub(',', '.', rate_value)
 	return float(result)
 
@@ -234,7 +256,7 @@ def parse(file):
 			code = get_range_from_column(book, sh, mainData_range, quantity_colums[5])
 			codes += code
 
-		singleUse_range = find_singleUse_section(book, sh)
+		singleUse_range = find_additional_section(book, sh, 'Single use packaging')
 		if singleUse_range is not None:
 
 			code_singleUse = get_range_from_column(book, sh, singleUse_range, 'B')
@@ -266,13 +288,23 @@ def parse(file):
 
 
 if __name__ == '__main__':
-	file = 'rawxl/pdfFile33.xlsx'
-	# dt = parse(file)
+	
+
+	file = '/home/emil/Загрузки/multy/converted/multi11.xlsx'
 	wb = load_workbook(file)
 
-	
-	d = parse(file)
-	print(d.totals)
+	sheets = wb.get_sheet_names()
+	for i in sheets:
+		a = find_additional_section(wb, i, "Single use packaging")
+		print('RESULT: ',a)
+
+	# sheet = wb.get_sheet_by_name('Page 3')
+	# a = is_gap_after_date(sheet['33'])
+	# print(a)
+
+
+	# d = parse(file)
+	# print(d.totals)
 		
 
 
