@@ -33,29 +33,33 @@ def find_main_data(book, sheet:str):
 
 
 def find_quantity_columns(book, sheet:str, mainData_range):
-		page = book.get_sheet_by_name(sheet)  
-		data_beginning_row = str(mainData_range[0])
-		
-		beginning = None
-		end = None
-		for cell in page[data_beginning_row]:
-			if not isinstance(cell.value, int):
-				if beginning is not None:
-					if not isinstance(cell.value, str):
-						beginning = None
-						continue	
-					elif ',' in cell.value:  #TODO: REG digit-digit-comma-digit-digit
-						end = cell.column + 1  # +1 is for include 'code' column, that follows quite after amount ( ',' cell.value)
-						break
-				continue
-			elif beginning is None:
-				beginning = cell.column
-		if not end - beginning == 5:
-			raise ValueError("Error during defining range of columns containing quantity values")
-		return tuple(get_column_letter(i) for i in range(beginning, end+1))
+	page = book.get_sheet_by_name(sheet)  
+	data_beginning_row = str(mainData_range[0])
+	values_list = page[data_beginning_row]
+
+	mask = {1: (int,), 2: (int,), 3: (int, float),
+			4: (int, float), 5: (str,), 6: (int,)}
+	pos = 1
+	beginning = None
+	ending = None
+	for i in values_list:
+		if type(i.value) in mask[pos]:
+			if beginning is None:
+				beginning = i.column
+			pos +=1
+			if pos == 6:
+				ending = i.column+1
+				break
+			continue
+		else:
+			beginning = None
+			pos = 1
+	if beginning is None:
+		raise ValueError(f"can't find 'Number' 'Pieces' 'Total' 'Price' 'Amount' columns layout on the {sheet}" )
+	return tuple(get_column_letter(i) for i in range(beginning, ending+1))
 
 
-def find_singleUse_setion(book, sheet:str):
+def find_singleUse_section(book, sheet:str):
 	page = book.get_sheet_by_name(sheet)
 	data_beginning_row = None
 	data_range = 0
@@ -139,7 +143,7 @@ def check_numbers(numbers:list, book, sheet, column_name):
 	
 
 def check_rate(rates:list, book, sheet):
-	"""cheks is format of string like 'dd.mm.yyyy' or not"""
+	"""cheks is format of string is like 'dd.mm.yyyy' or not"""
 	for rate in rates:
 		rate = str(rate)
 		res = re.match(r'\d{1},\d{2}', rate)
@@ -160,6 +164,20 @@ def correct_priece_format(price:str, book, sheet:str):
 		raise ValueError(f'ValueError: while convert to right format value {price}\
 							      from column Prise in book {book}, page {sheet}')
 
+def correct_totals_format(totals:list):
+	"""corrects 'total' values like 1,600 that retrieved as floats -> 1.6 
+	to correct format -> 1600, int
+	"""
+	result = []
+	for i in totals:
+		if isinstance(i, float):
+			i = str(i).replace('.', '')
+			i = '{0:0<4}'.format(i)
+			result.append(int(i))
+		else:
+			result.append(i)
+	return result
+
 
 def adopt_float_format(rate_value):
 	"""make rate record suitable to convert to float 
@@ -174,7 +192,6 @@ def parse(file):
 	
 	varieties = []; costumers = []; numbers = []; pieces = []
 	totals = []   ; prices = []   ; amounts = []; codes = []
-
 	codes_singleUse = []; numbers_singleUse = []; rates_singleUse = []
 	
 	for sh in sheets:
@@ -203,6 +220,7 @@ def parse(file):
 
 			total = get_range_from_column(book, sh, mainData_range, quantity_colums[2])
 			check_numbers(total, book, sh, 'total')
+			total = correct_totals_format(total)
 			totals += total
 
 			price = get_range_from_column(book, sh, mainData_range, quantity_colums[3])
@@ -216,7 +234,7 @@ def parse(file):
 			code = get_range_from_column(book, sh, mainData_range, quantity_colums[5])
 			codes += code
 
-		singleUse_range = find_singleUse_setion(book, sh)
+		singleUse_range = find_singleUse_section(book, sh)
 		if singleUse_range is not None:
 
 			code_singleUse = get_range_from_column(book, sh, singleUse_range, 'B')
@@ -248,10 +266,14 @@ def parse(file):
 
 
 if __name__ == '__main__':
-	file = 'pdfFile47.xlsx'
-	dt = parse(file)
-	for i in dt:
-		print(i)
+	file = 'rawxl/pdfFile33.xlsx'
+	# dt = parse(file)
+	wb = load_workbook(file)
+
+	
+	d = parse(file)
+	print(d.totals)
+		
 
 
 
