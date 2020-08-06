@@ -8,7 +8,8 @@ import re
 Fieldstuple = namedtuple('Fields', 'varieties costumers numbers pieces \
 								   	totals    prices    amounts codes  \
 								    								   \
-								    codes_singleUse numbers_singleUse rates_singleUse')
+								    codes_singleUse numbers_singleUse rates_singleUse\
+								    codes_multiUse  numbers_multiUse  rates_multiUse')
 
 
 def find_main_data(book, sheet:str):
@@ -93,16 +94,6 @@ def find_additional_section(book, sheet:str, section:str):
 	return data_beginning_row, data_beginning_row + data_range - 1
 
 
-def is_gap_after_date(row):
-	"""checks is row is empty spase after 'Date'-row in additional section
-	(some pages can contain such rows after conversion, seldon) 
-	"""
-	for cell in row:
-		if cell.value == 'rental charge':
-			return True
-	return False
-
-
 def find_quantities_singleUse(book, sheet:str, singleUse_range):
 	page = book.get_sheet_by_name(sheet)  
 	data_beginning_row = singleUse_range[0]
@@ -111,6 +102,32 @@ def find_quantities_singleUse(book, sheet:str, singleUse_range):
 								            if cell.value in ('Number', 'Rate')]
 	return tuple(get_column_letter(i) for i in quantity_columns)
 
+
+def find_quantities_multiUse(book, sheet:str, multiUse_range):
+	page = book.get_sheet_by_name(sheet)
+	data_beginning_row = multiUse_range[0]
+	if page[f'A{data_beginning_row-1}'].value == 'Date':
+		headline_row = str(data_beginning_row - 1)
+	elif is_gap_after_date(page[f'{data_beginning_row-1}']):
+		headline_row = str(data_beginning_row - 2)
+	else:
+		raise ValueError(f"couldn't find headline_row of 'Multi use packaging' on {sheet}")
+	quantity_columns = [cell.column for cell in page[headline_row] 
+						if cell.value in ('Number', 'Deposit', 'Packaging\nrental charge', 'Packaging')]
+	if not len(quantity_columns) == 3:
+		raise ValueError(f"couldn't find one of: 'Number', 'Deposit' or 'Packaging rental charge' columns in 'Multi use packaging'-section on {sheet}")
+	return tuple(get_column_letter(i) for i in quantity_columns)
+
+
+def is_gap_after_date(row):
+	"""checks is row is an empty space after 'Date'-row in additional section
+	(some pages can contain such rows after conversion)
+	Used in 'find_additional_section' function 
+	"""
+	for cell in row:
+		if cell.value == 'rental charge':
+			return True
+	return False
 
 def get_range_from_column(book, sheet:str, col_range:tuple, column_name:str):
 		"""takes tuple containing (bigining-, end-) column numbers 
@@ -215,7 +232,8 @@ def parse(file):
 	varieties = []; costumers = []; numbers = []; pieces = []
 	totals = []   ; prices = []   ; amounts = []; codes = []
 	codes_singleUse = []; numbers_singleUse = []; rates_singleUse = []
-	
+	codes_multiUse = [];  numbers_multiUse = [];  rates_multiUse = []
+
 	for sh in sheets:
 		mainData_range = find_main_data(book, sh)
 		if mainData_range is not None:
@@ -280,9 +298,23 @@ def parse(file):
 			rate_singleUse = [adopt_float_format(i) for i in rate_singleUse]
 			rates_singleUse += rate_singleUse
 
+		multiUse_range = find_additional_section(book, sh, 'Multi use packaging')
+		if multiUse_range is not None:
+			
+			code_multiUse = get_range_from_column(book, sh, multiUse_range, 'B')
+			if len(code_multiUse) == 1 and is_rows_merged(code_multiUse):
+				code_multiUse = [int(i) for i in code_multiUse[0].split('\n')]
+			check_codes(code_multiUse, book, sh)
+			codes_multiUse += code_multiUse
+
+			numbers_multiUse = None
+
+			rates_multiUse = None
+
 	retrieved_data = Fieldstuple(varieties, costumers, numbers, pieces, 
 								 totals,    prices,    amounts, codes, 
-								 codes_singleUse, numbers_singleUse, rates_singleUse)
+								 codes_singleUse, numbers_singleUse, rates_singleUse,
+								 codes_multiUse,  numbers_multiUse,  rates_multiUse)
 
 	return retrieved_data
 
@@ -290,21 +322,17 @@ def parse(file):
 if __name__ == '__main__':
 	
 
-	file = '/home/emil/Загрузки/multy/converted/multi11.xlsx'
+	file = '/home/emil/Загрузки/multy/converted/multi5.xlsx'
 	wb = load_workbook(file)
 
-	sheets = wb.get_sheet_names()
-	for i in sheets:
-		a = find_additional_section(wb, i, "Single use packaging")
-		print('RESULT: ',a)
+	a = find_quantities_multiUse(wb, 'Page 2', (24, 24))
 
-	# sheet = wb.get_sheet_by_name('Page 3')
-	# a = is_gap_after_date(sheet['33'])
-	# print(a)
+	print(a)
 
 
 	# d = parse(file)
-	# print(d.totals)
+	# print(d.codes_multiUse)
+	# print(d.codes_singleUse)
 		
 
 
