@@ -31,3 +31,4 @@ def convert_pdf_to_xlsl(pdf_path, xlsx_path):
 
 if __name__ == '__main__':
 	print(remaining_conversions())
+

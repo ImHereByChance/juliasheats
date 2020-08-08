@@ -9,7 +9,7 @@ Fieldstuple = namedtuple('Fields', 'varieties costumers numbers pieces \
 								   	totals    prices    amounts codes  \
 								    								   \
 								    codes_singleUse numbers_singleUse rates_singleUse\
-								    codes_multiUse  numbers_multiUse  rates_multiUse')
+								    codes_multiUse  numbers_multiUse  deposits_multiUse, rents_multiUse')
 
 
 def find_main_data(book, sheet:str):
@@ -69,7 +69,6 @@ def find_additional_section(book, sheet:str, section:str):
 	data_range = 0
 	c = 0
 	for cell in page['A']:
-		# print(cell.value, '||||')
 		if cell.value == section: 
 			if not page[f'A{cell.row+1}'].value == 'Date':  
 				raise ValueError(f'error during searching {section}range: \
@@ -129,6 +128,7 @@ def is_gap_after_date(row):
 			return True
 	return False
 
+
 def get_range_from_column(book, sheet:str, col_range:tuple, column_name:str):
 		"""takes tuple containing (bigining-, end-) column numbers 
 		from find-functions and returns values of cells in this range
@@ -148,6 +148,7 @@ def is_varieties_or_costumers(data_list:list):
 
 
 def is_longFormat_date(date:str):
+	"""cheks is format of string is like 'dd.mm.yyyy' or not"""
 	if not isinstance(date, str):
 		return False
 	result = re.match(r'\d{2}.\d{2}.\d{4}', date)
@@ -165,29 +166,31 @@ def check_codes(codes:list, book, sheet):
 	for string in codes:
 		string = str(string)
 		if not len(string) == 3:
-			raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
+			raise ValueError(f'code value {string} in {book} on {sheet} does not look like code')
 		for i in string:
 			if not i.isdigit():
-				raise ValueError(f'code value {sheet} in {book} on {sheet} does not look like code')
+				raise ValueError(f'code value {string} in {book} on {sheet} does not look like code')
 
 
-def check_numbers(numbers:list, book, sheet, column_name):
+def check_numbers(numbers:list, sheet, column_name):
 	row_numb=0
 	for numb in numbers:
 		row_numb+=1
 		numb = str(numb)
 		for i in numb:
 			if not i.isdigit() and i != '.':
-				raise ValueError(f'Error during checking Number "{numb}" value (row {row_numb}) in {book} on {sheet}')
+				raise ValueError(f'Error during checking Number "{numb}" value (row {row_numb}) in {column_name} on {sheet}')
 	
 
-def check_rate(rates:list, book, sheet):
-	"""cheks is format of string is like 'dd.mm.yyyy' or not"""
-	for rate in rates:
-		rate = str(rate)
-		res = re.match(r'\d{1},\d{2}', rate)
+def check_fractinalStrings(values:list, sheet, column_name):
+	"""check strings is like '1,00' or '11,00' ('dd,dd' or 'd,dd') or not"""
+	row_numb=0
+	for i in values:
+		row_numb+=1
+		i = str(i)
+		res = re.match(r'\d{1,2},\d{2}', i)
 		if isinstance(res, type(None)):
-			raise ValueError(f'Error during checking Rate value "{rate}" in {book} on {sheet}')
+			raise ValueError(f'Error during checking value "{i}" - row {row_numb} in {column_name} on {sheet} ')
 
 
 def correct_priece_format(price:str, book, sheet:str):
@@ -203,10 +206,10 @@ def correct_priece_format(price:str, book, sheet:str):
 		raise ValueError(f'ValueError: while convert to right format value {price}\
 							      from column Prise in book {book}, page {sheet}')
 
+
 def correct_totals_format(totals:list):
 	"""finds 'total' values like 1,600 that retrieved as floats (1,600 -> 1.6) 
-	and corrects them to format -> 1600, int
-	"""
+	and corrects them to format -> 1600, int"""
 	result = []
 	for i in totals:
 		if isinstance(i, float):
@@ -232,7 +235,7 @@ def parse(file):
 	varieties = []; costumers = []; numbers = []; pieces = []
 	totals = []   ; prices = []   ; amounts = []; codes = []
 	codes_singleUse = []; numbers_singleUse = []; rates_singleUse = []
-	codes_multiUse = [];  numbers_multiUse = [];  rates_multiUse = []
+	codes_multiUse = [];  numbers_multiUse = [];  deposits_multiUse = []; rents_multiUse = []
 
 	for sh in sheets:
 		mainData_range = find_main_data(book, sh)
@@ -251,15 +254,15 @@ def parse(file):
 			quantity_colums = find_quantity_columns(book, sh, mainData_range)
 
 			number = get_range_from_column(book, sh, mainData_range, quantity_colums[0])
-			check_numbers(number, book, sh, 'number')
+			check_numbers(number, sh, 'number')
 			numbers += number
 
 			piece = get_range_from_column(book, sh, mainData_range, quantity_colums[1])
-			check_numbers(piece, book, sh, 'piece')
+			check_numbers(piece, sh, 'piece')
 			pieces += piece
 
 			total = get_range_from_column(book, sh, mainData_range, quantity_colums[2])
-			check_numbers(total, book, sh, 'total')
+			check_numbers(total, sh, 'total')
 			total = correct_totals_format(total)
 			totals += total
 
@@ -288,13 +291,13 @@ def parse(file):
 			number_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[0])
 			if len(number_singleUse) == 1 and is_rows_merged(number_singleUse):
 				number_singleUse = [int(i) for i in number_singleUse[0].split('\n')]
-			check_numbers(number_singleUse, book, sh, 'number_singleUse')
+			check_numbers(number_singleUse, sh, 'number_singleUse')
 			numbers_singleUse += number_singleUse
 
 			rate_singleUse = get_range_from_column(book, sh, singleUse_range, quantities_singleUse[1])
 			if len(rate_singleUse) == 1 and is_rows_merged(rate_singleUse):
 				rate_singleUse = [i for i in rate_singleUse[0].split('\n')]
-			check_rate(rate_singleUse, book, sh)
+			check_fractinalStrings(rate_singleUse, sh, 'rate (Single use)')
 			rate_singleUse = [adopt_float_format(i) for i in rate_singleUse]
 			rates_singleUse += rate_singleUse
 
@@ -307,32 +310,53 @@ def parse(file):
 			check_codes(code_multiUse, book, sh)
 			codes_multiUse += code_multiUse
 
-			numbers_multiUse = None
+			quantities_multiUse = find_quantities_multiUse(book, sh, multiUse_range)
 
-			rates_multiUse = None
+			number_multiUse = get_range_from_column(book, sh, multiUse_range, quantities_multiUse[0])
+			if len(number_multiUse) == 1 and is_rows_merged(number_multiUse):
+				number_multiUse = [int(i) for i in number_multiUse[0].split('\n')]
+			check_numbers(number_multiUse, sh, 'Number (Multi use)')
+			numbers_multiUse += number_multiUse
+
+			deposit_multiUse = [i for i in get_range_from_column(book, sh, multiUse_range, 
+												 quantities_multiUse[1]) if i is not None]
+			if len(deposit_multiUse) == 1 and is_rows_merged(deposit_multiUse):
+				deposit_multiUse = [i for i in deposit_multiUse[0].split('\n')]
+			check_fractinalStrings(deposit_multiUse, sh, 'Deposit (Multi use)')
+			deposit_multiUse = [adopt_float_format(i) for i in deposit_multiUse]
+			deposits_multiUse += deposit_multiUse
+
+			rent_multiUse = [i for i in get_range_from_column(book, sh, multiUse_range, 
+											  quantities_multiUse[2]) if i is not None]
+			if len(rent_multiUse) == 1 and is_rows_merged(rent_multiUse):
+				rent_multiUse = [i for i in rent_multiUse[0].split('\n')]
+			check_fractinalStrings(rent_multiUse, sh, 'Deposit (Multi use)')
+			rent_multiUse = [adopt_float_format(i) for i in rent_multiUse]
+			rents_multiUse += rent_multiUse
+
 
 	retrieved_data = Fieldstuple(varieties, costumers, numbers, pieces, 
 								 totals,    prices,    amounts, codes, 
 								 codes_singleUse, numbers_singleUse, rates_singleUse,
-								 codes_multiUse,  numbers_multiUse,  rates_multiUse)
+								 codes_multiUse,  numbers_multiUse,  deposits_multiUse, rents_multiUse)
 
 	return retrieved_data
 
 
 if __name__ == '__main__':
-	
+	file = '/home/emil/Загрузки/multy/converted/multi14.xlsx'
+	# wb = load_workbook(file)
 
-	file = '/home/emil/Загрузки/multy/converted/multi5.xlsx'
-	wb = load_workbook(file)
+	# a = find_quantities_multiUse(wb, 'Page 2', (24, 24))
 
-	a = find_quantities_multiUse(wb, 'Page 2', (24, 24))
-
-	print(a)
+	# print(a)
 
 
-	# d = parse(file)
-	# print(d.codes_multiUse)
-	# print(d.codes_singleUse)
+	d = parse(file)
+	print(d.numbers)
+	print(d.rates_singleUse)
+	print(d.codes_singleUse)
+
 		
 
 
