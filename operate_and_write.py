@@ -19,8 +19,9 @@ def filter_repeated_codes(codes_multiUse):
 	return filtred_codes
 
 
-def make_codesPayments_dict(codes_multiUse, deposits_multiUse,\
-									   		rents_multiUse):
+def make_codesPayments_dict(codes_multiUse, deposits_multiUse, rents_multiUse):
+	"""codes_multiUse; deposits_multiUse; rents_multiUse ->
+	-> {codes_multiUse: (deposits_multiUse, rents_multiUse)}"""
 	codes_multiUse = filter_repeated_codes(codes_multiUse)
 	depRen_tuples = zip(deposits_multiUse, rents_multiUse)
 	codes_and_DepRenTuples = zip(codes_multiUse, depRen_tuples)  #(code_multiUse, (deposits_multiUse, rents_multiUse), ...etc.)
@@ -37,35 +38,36 @@ def calc_packings(data):
 
 	index = 0
 	for code in data.codes:
-		try:
+		if code in codesRates_dict:
 			rate = codesRates_dict[code]
-		except KeyError:
-			costs_singleUse.append(None)
+			number = data.numbers[index]
+			cost = round(rate * number, 2)
 			
+			costs_singleUse.append(cost)
+			costs_multiUse_deposts.append(None)
+			costs_multiUse_rents.append(None)
+			index +=1
+		elif code in codesPayments_dict:	
 			payment = codesPayments_dict[code]
 			number = data.numbers[index]
-
 			deposit = payment[0]
-			dep_cost = (deposit * number) 
-			costs_multiUse_deposts.append(dep_cost)
-
-			rent = payment[1]
-			rent_cost = (rent * number)
-			costs_multiUse_rents.append(rent_cost)
+			dep_cost = round(deposit * number, 2) 
 			
+			rent = payment[1]
+			rent_cost = round(rent * number, 2)
+			
+			costs_multiUse_deposts.append(dep_cost)
+			costs_multiUse_rents.append(rent_cost)
+			costs_singleUse.append(None)
 			index +=1
-			continue
-		number = data.numbers[index]
-		cost = round(rate * number, 2)
-		costs_singleUse.append(cost)
-		
-		costs_multiUse_deposts.append(None)
-		costs_multiUse_rents.append(None)
+		else:
+			costs_singleUse.append(None)
+			costs_multiUse_deposts.append(None)
+			costs_multiUse_rents.append(None)
+			index +=1
 
-		index +=1
-	
 	return Calculated(costs_singleUse, costs_multiUse_deposts, costs_multiUse_rents)
-	
+
 
 def write_column(sheet, data:list, starting_row, column):
 		for i in data:
@@ -94,7 +96,7 @@ def write_results(sample_file, outp_filename, parsed, calcd):
 
 
 if __name__ == '__main__':
-	file = '/home/emil/Загрузки/multy/converted/multi14.xlsx'
+	file = '/home/emil/Загрузки/multy/converted/multi16.xlsx'
 	
 	data = parse(file)
 	calcl = calc_packings(data)
