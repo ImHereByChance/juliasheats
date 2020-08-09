@@ -25,9 +25,9 @@ def main():
 	retrieved_data = parse(f'./rawxl/{source_xl}')
 	calculated_data = calc_packings(retrieved_data) 
 	output_xl = write_results(sample_file='sample.xlsx',
-							  outp_filename=f'./out/{source_xl}',
-							  parsed=retrieved_data,
-							  calculated=calculated_data)
+				  outp_filename=f'./out/{source_xl}',
+				  parsed=retrieved_data,
+				  calculated=calculated_data)
 
 	open_file(f'{output_xl}')
 
