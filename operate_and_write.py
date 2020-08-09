@@ -30,7 +30,7 @@ def make_codesPayments_dict(codes_multiUse, deposits_multiUse, rents_multiUse):
 def calc_packings(data):
 	codesRates_dict = make_codesRates_dict(data.codes_singleUse, data.rates_singleUse)
 	codesPayments_dict = make_codesPayments_dict(data.codes_multiUse, data.deposits_multiUse, 
-																	  data.rents_multiUse)
+									  data.rents_multiUse)
 	costs_singleUse = []
 	costs_multiUse_deposts = []
 	costs_multiUse_rents =[]
@@ -80,14 +80,14 @@ def write_results(sample_file, outp_filename, parsed, calculated):
 	wb = load_workbook(sample_file)
 	sheet = wb.active
 
-	write_column(sheet, parsed.custumers, 5, 4)   			          # Поставщик
-	write_column(sheet, parsed.varieties, 5, 5)   			          # Сорт
-	write_column(sheet, parsed.prices, 5, 6)      			          # Цена за стебель
-	write_column(sheet, parsed.pieces, 5, 7)   				          # Кол-во в коробке
-	write_column(sheet, parsed.numbers, 5, 8)   			          # Коробок шт.
-	write_column(sheet, parsed.totals, 5, 9)  				          # Всего стеблей
-	write_column(sheet, parsed.amounts, 5, 10)  			          # Purchases of products (NE)
-	write_column(sheet, calculated.costs_singleUse, 5, 14)  		  # Single use packaging Connect (NE)
+	write_column(sheet, parsed.custumers, 5, 4)   		          # Поставщик
+	write_column(sheet, parsed.varieties, 5, 5)   		          # Сорт
+	write_column(sheet, parsed.prices, 5, 6)      		          # Цена за стебель
+	write_column(sheet, parsed.pieces, 5, 7)   		          # Кол-во в коробке
+	write_column(sheet, parsed.numbers, 5, 8)  		          # Коробок шт.
+	write_column(sheet, parsed.totals, 5, 9)  		          # Всего стеблей
+	write_column(sheet, parsed.amounts, 5, 10)  		          # Purchases of products (NE)
+	write_column(sheet, calculated.costs_singleUse, 5, 14)  	  # Single use packaging Connect (NE)
 	write_column(sheet, calculated.costs_multiUse_deposts, 5, 15)     # Packaging deposit by Connect (AG)
 	write_column(sheet, calculated.costs_multiUse_rents, 5, 16)       # Packaging rent by Connect (NE)
 	
