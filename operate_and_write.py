@@ -1,5 +1,4 @@
 from parser import *
-import os ###TMP
 
 
 Calculated = namedtuple('fields', 'costs_singleUse costs_multiUse_deposts costs_multiUse_rents')
@@ -41,6 +40,7 @@ def calc_packings(data):
 		if code in codesRates_dict:
 			rate = codesRates_dict[code]
 			number = data.numbers[index]
+			
 			cost = round(rate * number, 2)
 			
 			costs_singleUse.append(cost)
@@ -50,6 +50,7 @@ def calc_packings(data):
 		elif code in codesPayments_dict:	
 			payment = codesPayments_dict[code]
 			number = data.numbers[index]
+			
 			deposit = payment[0]
 			dep_cost = round(deposit * number, 2) 
 			
@@ -75,20 +76,20 @@ def write_column(sheet, data:list, starting_row, column):
 			starting_row += 1
 
 
-def write_results(sample_file, outp_filename, parsed, calcd): 
+def write_results(sample_file, outp_filename, parsed, calculated): 
 	wb = load_workbook(sample_file)
 	sheet = wb.active
 
-	write_column(sheet, parsed.costumers, 5, 4)   			  # Поставщик
-	write_column(sheet, parsed.varieties, 5, 5)   			  # Сорт
-	write_column(sheet, parsed.prices, 5, 6)      			  # Цена за стебель
-	write_column(sheet, parsed.pieces, 5, 7)   				  # Кол-во в коробке
-	write_column(sheet, parsed.numbers, 5, 8)   			  # Коробок шт.
-	write_column(sheet, parsed.totals, 5, 9)  				  # Всего стеблей
-	write_column(sheet, parsed.amounts, 5, 10)  			  # Purchases of products (NE)
-	write_column(sheet, calcd.costs_singleUse, 5, 14)  		  # Single use packaging Connect (NE)
-	write_column(sheet, calcd.costs_multiUse_deposts, 5, 15)  # Packaging deposit by Connect (AG)
-	write_column(sheet, calcd.costs_multiUse_rents, 5, 16)    # Packaging rent by Connect (NE)
+	write_column(sheet, parsed.custumers, 5, 4)   			          # Поставщик
+	write_column(sheet, parsed.varieties, 5, 5)   			          # Сорт
+	write_column(sheet, parsed.prices, 5, 6)      			          # Цена за стебель
+	write_column(sheet, parsed.pieces, 5, 7)   				          # Кол-во в коробке
+	write_column(sheet, parsed.numbers, 5, 8)   			          # Коробок шт.
+	write_column(sheet, parsed.totals, 5, 9)  				          # Всего стеблей
+	write_column(sheet, parsed.amounts, 5, 10)  			          # Purchases of products (NE)
+	write_column(sheet, calculated.costs_singleUse, 5, 14)  		  # Single use packaging Connect (NE)
+	write_column(sheet, calculated.costs_multiUse_deposts, 5, 15)     # Packaging deposit by Connect (AG)
+	write_column(sheet, calculated.costs_multiUse_rents, 5, 16)       # Packaging rent by Connect (NE)
 	
 	wb.save(outp_filename)
 
@@ -96,14 +97,7 @@ def write_results(sample_file, outp_filename, parsed, calcd):
 
 
 if __name__ == '__main__':
-	file = '/home/emil/Загрузки/multy/converted/multi16.xlsx'
-	
-	data = parse(file)
-	calcl = calc_packings(data)
-
-	write_results('sample.xlsx', './out/qwakozyabra.xlsx' ,data, calcl)
-
-	os.system("xdg-open ./out/qwakozyabra.xlsx")
+	pass
 
 
 	
