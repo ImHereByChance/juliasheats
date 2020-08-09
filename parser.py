@@ -6,10 +6,9 @@ import re
 
 
 Fieldstuple = namedtuple('Fields', 'varieties custumers numbers pieces \
-								   	totals    prices    amounts codes  \
-								    								   \
-								    codes_singleUse  rates_singleUse\
-								    codes_multiUse   deposits_multiUse, rents_multiUse')
+				    totals    prices    amounts codes  \								    								   \
+				    codes_singleUse  rates_singleUse\
+				    codes_multiUse   deposits_multiUse, rents_multiUse')
 
 
 def find_main_data(book, sheet:str):
@@ -132,7 +131,7 @@ def find_quantities_multiUse(book, sheet:str, multiUse_range):
 		raise ValueError(f"couldn't find headline_row of 'Multi use packaging' on {sheet}")
 	
 	quantity_columns = [cell.column for cell in page[headline_row] 
-						if cell.value in ('Number', 'Deposit', 'Packaging\nrental charge', 'Packaging')]
+					if cell.value in ('Number', 'Deposit', 'Packaging\nrental charge', 'Packaging')]
 	if not len(quantity_columns) == 3:
 		raise ValueError(f"couldn't find one of: 'Number', 'Deposit' or 'Packaging rental charge' columns in 'Multi use packaging'-section on {sheet}")
 	return tuple(get_column_letter(i) for i in quantity_columns)
@@ -156,7 +155,7 @@ def get_range_from_column(book, sheet:str, col_range:tuple, column_name:str):
 		"""
 		page = book.get_sheet_by_name(sheet)
 		return [i[0].value for i in 
-					page[f'{column_name}{col_range[0]}':f'{column_name}{col_range[1]}']]
+				page[f'{column_name}{col_range[0]}':f'{column_name}{col_range[1]}']]
 
 
 def is_longFormat_date(date:str):
@@ -224,16 +223,14 @@ def check_fractinalStrings(values:list, sheet, column_name):
 
 def correct_priece_format(price:str, book, sheet:str):
 	if not isinstance(price, int):
-		raise ValueError(f'error while convert to right format value {price}\
-							    from column Prise on page "{sheet}"')
+		raise ValueError(f'error while convert to right format value {price} from column Prise on page "{sheet}"')
 	price = str(price)
 	if len(price) == 3:
 		return float(f'0.{price}')
 	elif len(price) > 3:
 		return float(f'{price[:-3]}.{price[-3:]}')
 	else:
-		raise ValueError(f'ValueError: while convert to right format value {price}\
-							    from column Prise on page {sheet}')
+		raise ValueError(f'ValueError: while convert to right format value {price} from column Prise on page {sheet}')
 
 
 def correct_totals_format(totals:list):
@@ -257,7 +254,7 @@ def adopt_float_format(rate_value):
 	return float(result)
 
 
-# retrieve_...()s used in parse()' function
+# retrieve_...() functions used in parse()' function
 
 def retrieve_variety(book, sheet, data_range):
 	retrieved = get_range_from_column(book, sheet, data_range, 'C')
@@ -408,9 +405,9 @@ def parse(file):
 			rents_multiUse += rent_multiUse
 
 	return Fieldstuple(varieties, custumers, numbers, pieces, 
-								  totals,    prices,  amounts, codes, 
-								  codes_singleUse, rates_singleUse,
-								  codes_multiUse,  deposits_multiUse, rents_multiUse) 
+			   totals,    prices,    amounts, codes, 
+			   codes_singleUse, rates_singleUse,
+			   codes_multiUse,  deposits_multiUse, rents_multiUse) 
 
 
 if __name__ == '__main__':
