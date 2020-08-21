@@ -6,14 +6,14 @@ import re
 
 
 Fieldstuple = namedtuple('Fields', 'varieties custumers numbers pieces \
-				    totals    prices    amounts codes  \								    								   \
+				    totals    prices    amounts codes  \
 				    codes_singleUse  rates_singleUse\
 				    codes_multiUse   deposits_multiUse, rents_multiUse')
 
 
 def find_main_data(book, sheet:str):
 	"""
-	finds desposition of rows that contains main columns such as 
+	finds desposition of rows containing main columns such as 
 	varieties, custumers, numbers, pieces, totals, prices, amounts, codes.
 	Returns tuple(beginning_row, ending_row)
 	"""
@@ -70,7 +70,7 @@ def find_quantity_columns(book, sheet:str, mainData_range):
 def find_additional_section(book, sheet:str, section:str):
 	"""
 	Finds "Single use packaging" and "Multi use packaging" sections on the page. 
-	Returns tuple (beginning_row, ending_row) row-numbers.
+	Returns tuple of (beginning_row, ending_row) row-numbers.
 	"""
 	page = book.get_sheet_by_name(sheet)
 	data_beginning_row = None
@@ -103,7 +103,7 @@ def find_additional_section(book, sheet:str, section:str):
 
 def find_rates_singleUse(book, sheet:str, singleUse_range):
 	"""
-	Finds disposition of column "Rate" on page and returns it's column-letter
+	Finds disposition of column "Rate" on the page and returns it's column-letter
 	"""
 	page = book.get_sheet_by_name(sheet)  
 	data_beginning_row = singleUse_range[0]
@@ -118,7 +118,7 @@ def find_rates_singleUse(book, sheet:str, singleUse_range):
 def find_quantities_multiUse(book, sheet:str, multiUse_range):
 	"""
 	Finds disposition of columns: Deposit, Packaging rental charge on page
-	and return their column-letters. E.g ('S', 'V').
+	and returns their column-letters. E.g ('S', 'V').
 	"""
 	page = book.get_sheet_by_name(sheet)
 	data_beginning_row = multiUse_range[0]
@@ -139,7 +139,7 @@ def find_quantities_multiUse(book, sheet:str, multiUse_range):
 
 def is_gap_after_date(row):
 	"""
-	checks is row is an empty space after 'Date'-row in additional section
+	checks is row is an empty space after 'Date'-row in additional section or not
 	(some pages can contain such rows after conversion)
 	Used in 'find_additional_section' function 
 	"""
@@ -211,7 +211,7 @@ def check_numbers(numbers:list, sheet, column_name):
 	
 
 def check_fractinalStrings(values:list, sheet, column_name):
-	"""check strings is like '1,00' or '11,00' ('dd,dd' or 'd,dd') or not"""
+	"""checks strings is like '1,00' or '11,00' ('dd,dd' or 'd,dd') or not"""
 	row_numb=0
 	for i in values:
 		row_numb+=1
@@ -227,10 +227,12 @@ def correct_priece_format(price:str, book, sheet:str):
 	price = str(price)
 	if len(price) == 3:
 		return float(f'0.{price}')
+	elif len(price) == 2:
+		return float(f'0.0{price}')
 	elif len(price) > 3:
 		return float(f'{price[:-3]}.{price[-3:]}')
 	else:
-		raise ValueError(f'ValueError: while convert to right format value {price} from column Prise on page {sheet}')
+		raise ValueError(f'error while convert to right format value {price} from column Prise on page {sheet}')
 
 
 def correct_totals_format(totals:list):
@@ -251,6 +253,10 @@ def adopt_float_format(rate_value):
 	"""makes rate record suitable to convert to float 
 	and converts them"""
 	result = re.sub(',', '.', rate_value)
+	
+	while result.count('.') > 1:  # if result looks like (1.000.00), remove all excess commas
+		result = re.sub(r'[.]', '', result, count=1)
+
 	return float(result)
 
 
@@ -357,11 +363,14 @@ def parse(file):
 	book = load_workbook(file)
 	sheets = book.get_sheet_names()[1:]  #list of sheets without title-page
 	
+
 	varieties = []; custumers = []; numbers = []; pieces = []
 	totals = []   ; prices = []   ; amounts = []; codes = []
+	
 	codes_singleUse = [];  rates_singleUse = []
 	codes_multiUse = [];   deposits_multiUse = []; rents_multiUse = []
 	
+
 	for sh in sheets:
 		mainData_range = find_main_data(book, sh)
 		if mainData_range is not None:
