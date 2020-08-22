@@ -21,7 +21,7 @@ def find_main_data(book, sheet:str):
 	data_beginning_row = None
 	data_range = 0
 	for cell in page['A']:
-		if cell.value == 'date':
+		if cell.value in ('date', 'Ship\ndate'):
 			data_beginning_row = cell.row + 1 
 			if isinstance(page[f'A{data_beginning_row}'].value, float):  # check of row follows next to data_beginng row 
 				continue
@@ -317,14 +317,7 @@ def retrieve_code_singleUse(book, sheet, data_range):
 
 def retrieve_rate_singleUse(book, sheet, data_range, column):
 	retrieved = get_range_from_column(book, sheet, data_range, column)
-	retrieved = [int(i) for i in split_ifMerged(retrieved)]
-	check_fractinalStrings(retrieved, sheet, 'rate (Single use)')
-	return [adopt_float_format(i) for i in retrieved]
-
-
-def retrieve_rate_singleUse(book, sheet, data_range, column):
-	retrieved = get_range_from_column(book, sheet, data_range, column)
-	retrieved = split_ifMerged(retrieved)
+	retrieved = [i for i in split_ifMerged(retrieved)]
 	check_fractinalStrings(retrieved, sheet, 'rate (Single use)')
 	return [adopt_float_format(i) for i in retrieved]
 
@@ -412,6 +405,7 @@ def parse(file):
 			deposits_multiUse += deposit_multiUse
 			rent_multiUse = retrieve_rent_multiUse(book, sh, multiUse_range, quantities_multiUse[2]) 
 			rents_multiUse += rent_multiUse
+
 
 	return Fieldstuple(varieties, custumers, numbers, pieces, 
 			   totals,    prices,    amounts, codes, 
