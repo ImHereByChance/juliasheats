@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, executor, types
 TOKEN = os.getenv('TG_TOKEN')
 
 
-bot = Bot(token=API_TOKEN)
+bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
 
@@ -25,8 +25,12 @@ async def scan_message(message: types.Message):
     	await message.reply_document(file)
  
 
+def main():
+	executor.start_polling(dp, skip_updates=True)
+
+
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    main()
 
 
 
