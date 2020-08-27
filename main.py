@@ -2,6 +2,7 @@ from pdfpart import *
 from parser import *
 from operate_and_write import *
 import platform
+import sys
 
 
 def open_file(file):
@@ -32,13 +33,7 @@ def convert_file(source_pdf):
 	return output_xl
 
 
-def main():
-	source_pdf = input('filename or path: ')
-	converted_file = convert_file(source_pdf)
-
-	open_file(f'{converted_file}')
-
-
 if __name__ == '__main__':
 	create_dirs()
-	main()
+	converted_file = convert_file(str(sys.argv[1]))
+	open_file(f'{converted_file}')
