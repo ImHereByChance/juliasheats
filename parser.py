@@ -83,7 +83,7 @@ def find_additional_section(book, sheet:str, section:str):
 								 "Date" row don`t follow after "{section}" row')
 			if not is_longFormat_date(page[f'A{cell.row+2}'].value):
 				if is_gap_after_date(page[f'{cell.row+2}']):
-					data_beginning_row = data_beginning_row = cell.row + 3
+					data_beginning_row = cell.row + 3
 					continue
 				else:
 					raise ValueError(f'couldn`t define {section} on {page}')
@@ -183,12 +183,13 @@ def split_ifMerged(values:list):
 
 
 def check_varieties_or_custumers(data_list:list, book, sheet):
+	counter = 1
 	for i in data_list:
 		if isinstance(i, str) and i[0].isdigit() and ' ' in i:
 			continue
 		else:
-			raise ValueError(f"Error in column 'variety' on page '{sheet}'")
-
+			raise ValueError(f"'{i}' (position {counter} in column) on page '{sheet} does not look like valid variety or costumer value'")
+		counter += 1
 
 def check_codes(codes:list, book, sheet):
 	for string in codes:
