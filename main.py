@@ -14,7 +14,7 @@ def open_file(file):
 
 def create_dirs():
 	"""if not exists, creates folder for raw, intermediate xlsx-files converted 
-	via API("rawxl") and folder for final xlsx files ("out")"""
+	via API (./rawxl/) and folder for final xlsx files (./out/)"""
 	try:
 		os.makedirs('out/')
 		os.makedirs('rawxl/')
@@ -30,7 +30,7 @@ def convert_file(source_pdf):
 				  outp_filename=f'./out/{source_xl}',
 				  parsed=retrieved_data,
 				  calculated=calculated_data)
-	return output_xl
+	return output_xl  # returns just name of the file, nothing else
 
 
 if __name__ == '__main__':
