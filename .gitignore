@@ -1,0 +1,7 @@
+env/
+%F
+juliaSheets.sublime-project
+juliaSheets.sublime-workspace
+out/
+__pycache__/
+rawxl/
